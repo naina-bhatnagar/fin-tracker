@@ -430,6 +430,7 @@
                 const dateString = `${year}${month}${day}`;
                 
                 let eventStr = "BEGIN:VEVENT\n";
+                eventStr += `UID:${targetDate.getTime()}-${Math.random().toString(36).substring(2,8)}@fdtracker\n`;
                 eventStr += `SUMMARY:${summary}\n`;
                 eventStr += `DESCRIPTION:${description}\n`;
                 eventStr += `DTSTART:${dateString}T090000\n`; 

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FD Interest Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.8) sepia(1) saturate(5) hue-rotate(130deg);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen font-sans p-4 sm:p-8">
+
+    <div class="max-w-4xl mx-auto space-y-6">
+        
+        <header class="text-center py-4 border-b border-gray-800">
+            <h1 class="text-3xl font-extrabold text-teal-400 tracking-tight">🏦 FD Interest Tracker & Reminder Generator</h1>
+            <p class="text-sm text-gray-400 mt-2 max-w-xl mx-auto">
+                <span class="inline-block bg-red-950 text-red-400 font-bold px-2 py-0.5 rounded text-xs mr-1">⚠️ PRIVACY GUARANTEE:</span> 
+                All data is stored in your browser's local RAM. **Refreshing or closing this tab will permanently erase everything.**
+            </p>
+        </header>
+
+        <main class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div class="md:col-span-2 space-y-6">
+                <section class="bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-700">
+                    <h2 class="text-xl font-bold text-gray-200 mb-4 flex items-center gap-2">Add New Fixed Deposit</h2>
+                    <form id="fdForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Account Label / Owner</label>
+                            <input type="text" id="label" placeholder="e.g., Dad's HDFC FD" required class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Principal Amount (₹)</label>
+                            <input type="text" id="principal" placeholder="e.g., 1,00,000" required class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Interest Rate (% p.a.)</label>
+                            <input type="number" id="rate" step="0.01" min="0.1" placeholder="e.g., 7.2" required class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Start Date</label>
+                            <input type="date" id="startDate" required class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Duration (Years)</label>
+                            <input type="number" id="years" min="0" value="1" required class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Duration (Months)</label>
+                            <input type="number" id="months" min="0" max="11" value="8" required class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Payout Frequency</label>
+                            <select id="frequency" class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500">
+                                <option value="quarterly">Quarterly (Every 3 Months)</option>
+                                <option value="monthly">Monthly (Every Month)</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
+                            <button type="button" id="resetFormBtn" class="bg-gray-700 hover:bg-gray-600 text-gray-200 font-bold py-2 px-3 rounded text-sm transition-colors shadow">
+                                🔄 Reset Form
+                            </button>
+                            
+                            <button type="button" id="copyPrevBtn" disabled class="bg-gray-700 hover:bg-gray-600 text-teal-400 disabled:text-gray-500 disabled:bg-gray-850 font-bold py-2 px-3 rounded text-sm transition-colors shadow cursor-not-allowed">
+                                📋 Same as Prev
+                            </button>
+                            
+                            <button type="submit" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-3 rounded text-sm transition-colors shadow">
+                                ➕ Add Fixed Deposit
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-700">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-gray-200"> Database Summary Matrix</h2>
+                        <span id="fdCountBadge" class="bg-gray-700 text-gray-300 px-2 py-0.5 rounded text-xs font-mono">0 FDs Added</span>
+                    </div>
+                    
+                    <div class="overflow-x-auto border border-gray-700 rounded-lg">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-gray-900 border-b border-gray-700 text-gray-400 text-xs uppercase tracking-wider">
+                                    <th class="p-3">Label</th>
+                                    <th class="p-3">Expected Payout Date</th>
+                                    <th class="p-3">Days</th>
+                                    <th class="p-3 text-right">Interest (Est.)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dbTableBody" class="divide-y divide-gray-700 text-gray-300">
+                                <tr>
+                                    <td colspan="4" class="p-4 text-center text-gray-500 italic">No deposits registered yet. Use the form above to add an FD.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <div class="md:col-span-1 space-y-4">
+                <section class="bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-700 text-center space-y-4">
+                    <h3 class="text-md font-bold text-gray-300 uppercase tracking-widest text-xs">Global Execution Actions</h3>
+                    
+                    <div class="text-left">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Custom Calendar File Name</label>
+                        <input type="text" id="customFileName" placeholder="fin_tracker_reminders" class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500">
+                    </div>
+                    
+                    <button id="downloadIcsBtn" disabled class="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-bold py-3 px-4 rounded-lg text-sm transition-all shadow flex items-center justify-center gap-2">
+                        💾 Download Unified .ics File
+                    </button>
+                    
+                    <p class="text-xs text-gray-500 italic leading-relaxed">
+                        Clicking compile downloads your calendar file and instantly performs an automated system data wipeout.
+                    </p>
+                </section>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // --- 1. In-Memory Database State Vectors ---
+        let fixed_deposits = [];
+        let calculated_payouts = [];
+        let lastSubmittedInputs = null;
+
+        // --- Initialize Dynamic HTML Date Constraints ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const startDateInput = document.getElementById('startDate');
+            const today = new Date();
+
+            // past boundary limit (25 years ago)
+            const pastLimit = new Date();
+            pastLimit.setFullYear(today.getFullYear() - 25);
+            const minDateStr = pastLimit.toISOString().split('T')[0];
+
+            // future boundary limit (1 year forward)
+            const futureLimit = new Date();
+            futureLimit.setFullYear(today.getFullYear() + 1);
+            const maxDateStr = futureLimit.toISOString().split('T')[0];
+
+            startDateInput.min = minDateStr;
+            startDateInput.max = maxDateStr;
+        });
+
+        // --- DOM Pointer Mapping ---
+        const fdForm = document.getElementById('fdForm');
+        const dbTableBody = document.getElementById('dbTableBody');
+        const fdCountBadge = document.getElementById('fdCountBadge');
+        const downloadIcsBtn = document.getElementById('downloadIcsBtn');
+        const principalInput = document.getElementById('principal');
+        const resetFormBtn = document.getElementById('resetFormBtn');
+        const copyPrevBtn = document.getElementById('copyPrevBtn');
+
+        // --- 2. Math & Date Engine Core Functions ---
+        function advanceMonths(baseDate, monthsToIncrement) {
+            let targetDate = new Date(baseDate.getTime());
+            let currentDay = targetDate.getDate();
+            
+            targetDate.setMonth(targetDate.getMonth() + monthsToIncrement);
+            
+            if (targetDate.getDate() !== currentDay) {
+                targetDate.setDate(0); 
+            }
+            return targetDate;
+        }
+
+        // Form processing interface
+        fdForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const submitBtn = fdForm.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            const label = document.getElementById('label').value.trim();
+            const principalRaw = principalInput.value.replace(/,/g, '');
+            const principal = parseFloat(principalRaw);
+            const ratePercent = parseFloat(document.getElementById('rate').value);
+            const startStr = document.getElementById('startDate').value;
+            const inputYears = parseInt(document.getElementById('years').value) || 0;
+            const inputMonths = parseInt(document.getElementById('months').value) || 0;
+            const frequency = document.getElementById('frequency').value;
+
+            const startDate = new Date(startStr);
+            const totalLifespanMonths = (inputYears * 12) + inputMonths;
+            const finalMaturityDate = advanceMonths(startDate, totalLifespanMonths);
+
+            // BOUNDARY PROTECTION CHECKS (Must evaluate completely BEFORE caching memory vectors!)
+            if (isNaN(principal) || principal <= 0) {
+                alert("❌ Error: Please enter a valid principal amount greater than ₹0.");
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+
+            if (isNaN(ratePercent) || ratePercent <= 0) {
+                alert("❌ Error: Please enter a valid positive number for the interest rate.");
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+
+            if (ratePercent > 20) {
+                alert("❌ Error: Interest rate cannot be greater than 20% p.a.");
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+
+            if (totalLifespanMonths > 300) { 
+                alert("❌ Error: Total FD duration cannot exceed 25 years.");
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+
+            if (inputYears === 0 && inputMonths === 0) {
+                alert("❌ Error: FD duration cannot be 0. Please add a valid year or month count.");
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+
+            const wordCount = label.split(/\s+/).filter(word => word.length > 0).length;
+            if (wordCount > 25) {
+                alert("❌ Error: Account label cannot exceed 25 words.");
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+
+            const today = new Date();
+            const pastLimitDate = new Date();
+            pastLimitDate.setFullYear(today.getFullYear() - 25);
+
+            const futureLimitDate = new Date();
+            futureLimitDate.setFullYear(today.getFullYear() + 1);
+
+            if (startDate < pastLimitDate) {
+                alert("❌ Error: Start date cannot be older than 25 years ago.");
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+
+            if (startDate > futureLimitDate) {
+                alert("❌ Error: Start date cannot be further than 1 year into the future.");
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+
+            // CACHE VALID STATE (Only executes once all boundary shields pass perfectly)
+            lastSubmittedInputs = {
+                label,
+                principal: document.getElementById('principal').value,
+                rate: document.getElementById('rate').value,
+                startDate: startStr,
+                years: inputYears,
+                months: inputMonths,
+                frequency
+            };
+
+            // Unlock Clone Utility interface elements programmatically
+            copyPrevBtn.disabled = false;
+            copyPrevBtn.classList.remove('bg-gray-850', 'text-gray-500', 'cursor-not-allowed');
+            copyPrevBtn.classList.add('bg-gray-700', 'hover:bg-gray-600', 'text-teal-400');
+
+            const fdId = Date.now();
+            const parentRecord = { id: fdId, label, principal, ratePercent, startDate, finalMaturityDate, frequency };
+            fixed_deposits.push(parentRecord);
+
+            const monthIntervalStep = (frequency === 'quarterly') ? 3 : 1;
+            const dailyRateEvaluator = (ratePercent / 100.0) / 365.0;
+
+            let elapsedIntervalMonths = 0;
+            let baselineTrackingDate = new Date(startDate.getTime());
+
+            while (true) {
+                elapsedIntervalMonths += monthIntervalStep;
+                let nextPayoutDate = advanceMonths(startDate, elapsedIntervalMonths);
+
+                if (nextPayoutDate > finalMaturityDate) {
+                    break;
+                }
+
+                const epochDifference = nextPayoutDate - baselineTrackingDate;
+                const daysInThisPeriod = Math.round(epochDifference / (1000 * 60 * 60 * 24));
+                const expectedInterestPayout = principal * dailyRateEvaluator * daysInThisPeriod;
+
+                calculated_payouts.push({
+                    fdId: fdId,
+                    label: label,
+                    payoutDate: nextPayoutDate,
+                    daysInInterval: daysInThisPeriod,
+                    interestAmount: expectedInterestPayout,
+                    principalRef: principal
+                });
+
+                baselineTrackingDate = nextPayoutDate;
+            }
+
+            fdForm.reset();
+            updateDatabaseUI();
+
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        });
+
+        // --- 3. View Management (UI Rendering Engine) ---
+        function updateDatabaseUI() {
+            fdCountBadge.textContent = `${fixed_deposits.length} FDs Added`;
+
+            if (calculated_payouts.length === 0) {
+                dbTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="p-4 text-center text-gray-500 italic">No deposits registered yet. Use the form above to add an FD.</td>
+                    </tr>`;
+                downloadIcsBtn.disabled = true;
+                return;
+            }
+
+            downloadIcsBtn.disabled = false;
+            dbTableBody.innerHTML = '';
+            
+            calculated_payouts.sort((a, b) => a.payoutDate - b.payoutDate);
+
+            calculated_payouts.forEach(record => {
+                const year = record.payoutDate.getFullYear();
+                const month = String(record.payoutDate.getMonth() + 1).padStart(2, '0');
+                const day = String(record.payoutDate.getDate()).padStart(2, '0');
+                const formattedDateStr = `${year}-${month}-${day}`;
+
+                const tableRow = document.createElement('tr');
+                tableRow.className = "hover:bg-gray-750 transition-colors";
+                tableRow.innerHTML = `
+                    <td class="p-3 font-medium text-gray-200">${record.label}</td>
+                    <td class="p-3 font-mono text-teal-300">${formattedDateStr}</td>
+                    <td class="p-3 text-gray-400 font-mono">${record.daysInInterval} Days</td>
+                    <td class="p-3 text-right text-emerald-400 font-bold font-mono">₹${record.interestAmount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                `;
+                dbTableBody.appendChild(tableRow);
+            });
+        }
+
+        // --- 4. Stream Conversion Pipeline (.ics Generation) ---
+        downloadIcsBtn.addEventListener('click', function() {
+            if (calculated_payouts.length === 0) return;
+
+            let icsContent = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//FDBhatnagarTrack//NONSGML Framework//EN\n";
+
+            function createIcsEvent(summary, description, targetDate) {
+                const year = targetDate.getFullYear();
+                const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+                const day = String(targetDate.getDate()).padStart(2, '0');
+                const dateString = `${year}${month}${day}`;
+                
+                let eventStr = "BEGIN:VEVENT\n";
+                eventStr += `SUMMARY:${summary}\n`;
+                eventStr += `DESCRIPTION:${description}\n`;
+                eventStr += `DTSTART:${dateString}T090000\n`; 
+                eventStr += `DTEND:${dateString}T090100\n`;   
+                
+                eventStr += "BEGIN:VALARM\n";
+                eventStr += "TRIGGER:P0D\n"; 
+                eventStr += "ACTION:DISPLAY\n";
+                eventStr += "DESCRIPTION:Reminder\n";
+                eventStr += "END:VALARM\n";
+                eventStr += "END:VEVENT\n";
+                return eventStr;
+            }
+
+            calculated_payouts.forEach(record => {
+                const summary = `🚨 Check FD Interest Credit: ₹${record.interestAmount.toFixed(2)}`;
+                const description = `FD Source Account: ${record.label}\\nPrincipal: ₹${record.principalRef.toLocaleString('en-IN')}\\nCalculation Window Block: ${record.daysInInterval} Days\\nExpected Rupee Return: ₹${record.interestAmount.toFixed(2)}`;
+                
+                icsContent += createIcsEvent(summary, description, record.payoutDate);
+            });
+
+            fixed_deposits.forEach(fd => {
+                const summary = `🎉 MATURITY ALERT: ${fd.label}`;
+                const description = `Your Fixed Deposit has reached its full term!\\nPrincipal to Claim: ₹${fd.principal.toLocaleString('en-IN')}\\nInterest Rate: ${fd.ratePercent}%\\nCheck your account to ensure the full maturity balance is credited or renewed.`;
+                
+                icsContent += createIcsEvent(summary, description, fd.finalMaturityDate);
+            });
+
+            icsContent += "END:VCALENDAR";
+
+            const blobFileStream = new Blob([icsContent], { type: "text/calendar;charset=utf-8;" });
+            const dynamicAnchorLink = document.createElement("a");
+            dynamicAnchorLink.href = URL.createObjectURL(blobFileStream);
+
+            const fileInput = document.getElementById('customFileName').value.trim();
+
+            let finalFileName = fileInput.replace(/[^a-zA-Z0-9_()-]/g, "_");
+            finalFileName = finalFileName.replace(/_+/g, "_");
+
+            if (!finalFileName || finalFileName === "_") {
+                finalFileName = "fin_tracker_reminders";
+            }
+
+            if (finalFileName.length > 50) {
+                finalFileName = finalFileName.substring(0, 50);
+            }
+
+            dynamicAnchorLink.download = `${finalFileName}.ics`;
+
+            document.body.appendChild(dynamicAnchorLink);
+            dynamicAnchorLink.click();
+            document.body.removeChild(dynamicAnchorLink);
+
+            fixed_deposits = [];
+            calculated_payouts = [];
+            updateDatabaseUI();
+            
+            alert("🎉 Calendar compilation download complete! Active RAM memory tables have been wiped completely blank.");
+        });
+
+        // Reset Button Logic
+        resetFormBtn.addEventListener('click', () => {
+            fdForm.reset();
+        });
+
+        // "Same as Prev" Clone Logic
+        copyPrevBtn.addEventListener('click', () => {
+            if (!lastSubmittedInputs) return;
+
+            document.getElementById('label').value = lastSubmittedInputs.label;
+            document.getElementById('principal').value = lastSubmittedInputs.principal;
+            document.getElementById('rate').value = lastSubmittedInputs.rate;
+            document.getElementById('startDate').value = lastSubmittedInputs.startDate;
+            document.getElementById('years').value = lastSubmittedInputs.years;
+            document.getElementById('months').value = lastSubmittedInputs.months;
+            document.getElementById('frequency').value = lastSubmittedInputs.frequency;
+
+            principalInput.dispatchEvent(new Event('input'));
+        });
+
+        // Live Comma Formatter Input Event
+        principalInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/,/g, '').replace(/\D/g, '');
+            
+            if (value) {
+                let numValue = Number(value);
+                const maxLimit = 100000000; 
+                if (numValue > maxLimit) {
+                    numValue = maxLimit;
+                }
+                e.target.value = numValue.toLocaleString('en-IN');
+            } else {
+                e.target.value = '';
+            }
+        });
+
+        // Intercept browser refresh / tab close actions
+        window.addEventListener('beforeunload', function (e) {
+            if (fixed_deposits.length > 0) {
+                e.preventDefault();
+                e.returnValue = ''; 
+            }
+        });
+
+        // Mobile back click protection configurations
+        window.history.pushState({ page: 1 }, "", "");
+
+        window.addEventListener('popstate', function (event) {
+            if (fixed_deposits.length > 0) {
+                const leave = confirm("⚠️ Warning: Going back will permanently erase all added FD records. Are you sure you want to exit?");
+                if (!leave) {
+                    window.history.pushState({ page: 1 }, "", "");
+                    return;
+                }
+            }
+            window.history.back();
+        });
+    </script>
+</body>
+</html>

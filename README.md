@@ -4,7 +4,7 @@ A privacy-focused, zero-backend web application built to solve the real-world pr
 
 > *Designed specifically to run 100% client-side in the browser's local RAM memory space, keeping sensitive personal financial details completely secure.*
 
-Live Demo: [Insert Your GitHub Pages Link Here]
+Live Demo: [GitHub Pages Link](https://naina-bhatnagar.github.io/fin-tracker/)
 
 ---
 

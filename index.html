@@ -32,7 +32,7 @@
                     <form id="fdForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Account Label / Owner</label>
-                            <input type="text" id="label" placeholder="e.g., Dad's HDFC FD" required class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500">
+                            <input type="text" id="label" maxlength="50" placeholder="e.g., Dad's HDFC FD" required class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Principal Amount (₹)</label>
@@ -109,7 +109,7 @@
                     
                     <div class="text-left">
                         <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Custom Calendar File Name</label>
-                        <input type="text" id="customFileName" placeholder="fin_tracker_reminders" class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500">
+                        <input type="text" id="customFileName" maxlength="50" placeholder="fin_tracker_reminders" class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500">
                     </div>
                     
                     <button id="downloadIcsBtn" disabled class="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-bold py-3 px-4 rounded-lg text-sm transition-all shadow flex items-center justify-center gap-2">
@@ -120,6 +120,27 @@
                         Clicking compile downloads your calendar file and instantly performs an automated system data wipeout.
                     </p>
                 </section>
+                <section class="bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-700">
+                    <h2 class="text-xl font-bold text-gray-200 mb-4"> FD Maturity Dates</h2>
+                    
+                    <div class="overflow-x-auto border border-gray-700 rounded-lg">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-gray-900 border-b border-gray-700 text-gray-400 text-xs uppercase tracking-wider">
+                                    <th class="p-3">Label</th>
+                                    <th class="p-3">Maturity Date</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3 text-right">Principal</th>
+                                </tr>
+                            </thead>
+                            <tbody id="maturityTableBody" class="divide-y divide-gray-700 text-gray-300">
+                                <tr>
+                                    <td colspan="4" class="p-4 text-center text-gray-500 italic">No mature terms tracked yet.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
             </div>
 
         </main>
@@ -129,6 +150,7 @@
         // --- 1. In-Memory Database State Vectors ---
         let fixed_deposits = [];
         let calculated_payouts = [];
+        let closed_fixed_deposits = [];
         let lastSubmittedInputs = null;
 
         // --- Initialize Dynamic HTML Date Constraints ---
@@ -158,6 +180,7 @@
         const principalInput = document.getElementById('principal');
         const resetFormBtn = document.getElementById('resetFormBtn');
         const copyPrevBtn = document.getElementById('copyPrevBtn');
+        const maturityTableBody = document.getElementById('maturityTableBody');
 
         // --- 2. Math & Date Engine Core Functions ---
         function advanceMonths(baseDate, monthsToIncrement) {
@@ -193,7 +216,7 @@
             const totalLifespanMonths = (inputYears * 12) + inputMonths;
             const finalMaturityDate = advanceMonths(startDate, totalLifespanMonths);
 
-            // BOUNDARY PROTECTION CHECKS (Must evaluate completely BEFORE caching memory vectors!)
+            // BOUNDARY PROTECTION CHECKS 
             if (isNaN(principal) || principal <= 0) {
                 alert("❌ Error: Please enter a valid principal amount greater than ₹0.");
                 submitBtn.disabled = false;
@@ -229,9 +252,8 @@
                 return;
             }
 
-            const wordCount = label.split(/\s+/).filter(word => word.length > 0).length;
-            if (wordCount > 25) {
-                alert("❌ Error: Account label cannot exceed 25 words.");
+            if (label.length > 50) { 
+                alert("❌ Error: Account label cannot exceed 50 characters.");
                 submitBtn.disabled = false;
                 submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                 return;
@@ -258,7 +280,7 @@
                 return;
             }
 
-            // CACHE VALID STATE (Only executes once all boundary shields pass perfectly)
+            // CACHE VALID STATE
             lastSubmittedInputs = {
                 label,
                 principal: document.getElementById('principal').value,
@@ -269,14 +291,19 @@
                 frequency
             };
 
-            // Unlock Clone Utility interface elements programmatically
+            // Unlock Same as prev button
             copyPrevBtn.disabled = false;
             copyPrevBtn.classList.remove('bg-gray-850', 'text-gray-500', 'cursor-not-allowed');
             copyPrevBtn.classList.add('bg-gray-700', 'hover:bg-gray-600', 'text-teal-400');
 
             const fdId = Date.now();
             const parentRecord = { id: fdId, label, principal, ratePercent, startDate, finalMaturityDate, frequency };
-            fixed_deposits.push(parentRecord);
+            
+            if (finalMaturityDate < today) {
+                closed_fixed_deposits.push(parentRecord);
+            } else {
+                fixed_deposits.push(parentRecord);
+            }
 
             const monthIntervalStep = (frequency === 'quarterly') ? 3 : 1;
             const dailyRateEvaluator = (ratePercent / 100.0) / 365.0;
@@ -296,6 +323,10 @@
                 const daysInThisPeriod = Math.round(epochDifference / (1000 * 60 * 60 * 24));
                 const expectedInterestPayout = principal * dailyRateEvaluator * daysInThisPeriod;
 
+                baselineTrackingDate = nextPayoutDate;
+                
+                if (nextPayoutDate < today) continue;
+
                 calculated_payouts.push({
                     fdId: fdId,
                     label: label,
@@ -304,8 +335,6 @@
                     interestAmount: expectedInterestPayout,
                     principalRef: principal
                 });
-
-                baselineTrackingDate = nextPayoutDate;
             }
 
             fdForm.reset();
@@ -319,36 +348,73 @@
         function updateDatabaseUI() {
             fdCountBadge.textContent = `${fixed_deposits.length} FDs Added`;
 
+            // --- PAYOUT SUMMARY MATRIX ---
             if (calculated_payouts.length === 0) {
                 dbTableBody.innerHTML = `
                     <tr>
                         <td colspan="4" class="p-4 text-center text-gray-500 italic">No deposits registered yet. Use the form above to add an FD.</td>
                     </tr>`;
-                downloadIcsBtn.disabled = true;
+                downloadIcsBtn.disabled = (fixed_deposits.length === 0);
+            } else {
+                downloadIcsBtn.disabled = false;
+                dbTableBody.innerHTML = '';
+                
+                calculated_payouts.sort((a, b) => a.payoutDate - b.payoutDate);
+                calculated_payouts.forEach(record => {
+                    const year = record.payoutDate.getFullYear();
+                    const month = String(record.payoutDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(record.payoutDate.getDate()).padStart(2, '0');
+                    const formattedDateStr = `${year}-${month}-${day}`;
+
+                    const tableRow = document.createElement('tr');
+                    tableRow.className = "hover:bg-gray-750 transition-colors";
+                    tableRow.innerHTML = `
+                        <td class="p-3 font-medium text-gray-200">${record.label}</td>
+                        <td class="p-3 font-mono text-teal-300">${formattedDateStr}</td>
+                        <td class="p-3 text-gray-400 font-mono">${record.daysInInterval} Days</td>
+                        <td class="p-3 text-right text-emerald-400 font-bold font-mono">₹${record.interestAmount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    `;
+                    dbTableBody.appendChild(tableRow);
+                });
+            }
+
+            // --- MATURITY MATRIX ---
+            if (fixed_deposits.length === 0 && closed_fixed_deposits.length === 0) {
+                maturityTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="p-4 text-center text-gray-500 italic">No mature terms tracked yet.</td>
+                    </tr>`;
                 return;
             }
 
-            downloadIcsBtn.disabled = false;
-            dbTableBody.innerHTML = '';
+            maturityTableBody.innerHTML = '';
+
+            fixed_deposits.sort((a, b) => a.finalMaturityDate - b.finalMaturityDate);
             
-            calculated_payouts.sort((a, b) => a.payoutDate - b.payoutDate);
-
-            calculated_payouts.forEach(record => {
-                const year = record.payoutDate.getFullYear();
-                const month = String(record.payoutDate.getMonth() + 1).padStart(2, '0');
-                const day = String(record.payoutDate.getDate()).padStart(2, '0');
-                const formattedDateStr = `${year}-${month}-${day}`;
-
-                const tableRow = document.createElement('tr');
-                tableRow.className = "hover:bg-gray-750 transition-colors";
-                tableRow.innerHTML = `
-                    <td class="p-3 font-medium text-gray-200">${record.label}</td>
-                    <td class="p-3 font-mono text-teal-300">${formattedDateStr}</td>
-                    <td class="p-3 text-gray-400 font-mono">${record.daysInInterval} Days</td>
-                    <td class="p-3 text-right text-emerald-400 font-bold font-mono">₹${record.interestAmount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                `;
-                dbTableBody.appendChild(tableRow);
+            fixed_deposits.forEach(fd => {
+                appendMaturityRow(fd, "Active", "text-amber-400", "hover:bg-gray-750");
             });
+
+            closed_fixed_deposits.forEach(fd => {
+                appendMaturityRow(fd, "Closed", "text-red-400 font-semibold", "bg-red-950/40 hover:bg-red-900/30 border-red-900/50");
+            });
+        }
+
+        function appendMaturityRow(fd, statusText, statusColorClass, rowBgClass) {
+            const year = fd.finalMaturityDate.getFullYear();
+            const month = String(fd.finalMaturityDate.getMonth() + 1).padStart(2, '0');
+            const day = String(fd.finalMaturityDate.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+
+            const row = document.createElement('tr');
+            row.className = `${rowBgClass} transition-colors`;
+            row.innerHTML = `
+                <td class="p-3 font-medium text-gray-200">${fd.label}</td>
+                <td class="p-3 font-mono text-gray-300">${dateStr}</td>
+                <td class="p-3 font-mono text-xs ${statusColorClass}">${statusText}</td>
+                <td class="p-3 text-right text-gray-100 font-mono">₹${fd.principal.toLocaleString('en-IN')}</td>
+            `;
+            maturityTableBody.appendChild(row);
         }
 
         // --- 4. Stream Conversion Pipeline (.ics Generation) ---
@@ -386,6 +452,7 @@
             });
 
             fixed_deposits.forEach(fd => {
+                if (fd.finalMaturityDate < new Date()) return;
                 const summary = `🎉 MATURITY ALERT: ${fd.label}`;
                 const description = `Your Fixed Deposit has reached its full term!\\nPrincipal to Claim: ₹${fd.principal.toLocaleString('en-IN')}\\nInterest Rate: ${fd.ratePercent}%\\nCheck your account to ensure the full maturity balance is credited or renewed.`;
                 
@@ -403,7 +470,7 @@
             let finalFileName = fileInput.replace(/[^a-zA-Z0-9_()-]/g, "_");
             finalFileName = finalFileName.replace(/_+/g, "_");
 
-            if (!finalFileName || finalFileName === "_") {
+            if (!finalFileName || !/[a-zA-Z0-9]/.test(finalFileName)) {
                 finalFileName = "fin_tracker_reminders";
             }
 
@@ -419,6 +486,7 @@
 
             fixed_deposits = [];
             calculated_payouts = [];
+            closed_fixed_deposits = [];
             updateDatabaseUI();
             
             alert("🎉 Calendar compilation download complete! Active RAM memory tables have been wiped completely blank.");
@@ -444,7 +512,7 @@
             principalInput.dispatchEvent(new Event('input'));
         });
 
-        // Live Comma Formatter Input Event
+        // Live Comma Formatter Input Event for Amount Field
         principalInput.addEventListener('input', function(e) {
             let value = e.target.value.replace(/,/g, '').replace(/\D/g, '');
             
@@ -468,7 +536,7 @@
             }
         });
 
-        // Mobile back click protection configurations
+        // Back click protection configurations
         window.history.pushState({ page: 1 }, "", "");
 
         window.addEventListener('popstate', function (event) {

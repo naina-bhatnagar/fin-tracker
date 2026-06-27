@@ -364,7 +364,7 @@
                     const year = record.payoutDate.getFullYear();
                     const month = String(record.payoutDate.getMonth() + 1).padStart(2, '0');
                     const day = String(record.payoutDate.getDate()).padStart(2, '0');
-                    const formattedDateStr = `${year}-${month}-${day}`;
+                    const formattedDateStr = `${day}-${month}-${year}`;
 
                     const tableRow = document.createElement('tr');
                     tableRow.className = "hover:bg-gray-750 transition-colors";
@@ -404,7 +404,7 @@
             const year = fd.finalMaturityDate.getFullYear();
             const month = String(fd.finalMaturityDate.getMonth() + 1).padStart(2, '0');
             const day = String(fd.finalMaturityDate.getDate()).padStart(2, '0');
-            const dateStr = `${year}-${month}-${day}`;
+            const dateStr = `${day}-${month}-${year}`;
 
             const row = document.createElement('tr');
             row.className = `${rowBgClass} transition-colors`;
@@ -446,7 +446,7 @@
             }
 
             calculated_payouts.forEach(record => {
-                const summary = `🚨 Check FD Interest Credit: ₹${record.interestAmount.toFixed(2)}`;
+                const summary = `🚨 ₹${record.interestAmount.toFixed(2)} : Check FD Interest Credit`;
                 const description = `FD Source Account: ${record.label}\\nPrincipal: ₹${record.principalRef.toLocaleString('en-IN')}\\nCalculation Window Block: ${record.daysInInterval} Days\\nExpected Rupee Return: ₹${record.interestAmount.toFixed(2)}`;
                 
                 icsContent += createIcsEvent(summary, description, record.payoutDate);
@@ -454,7 +454,7 @@
 
             fixed_deposits.forEach(fd => {
                 if (fd.finalMaturityDate < new Date()) return;
-                const summary = `🎉 MATURITY ALERT: ${fd.label}`;
+                const summary = `🎉 ${fd.label} : MATURITY ALERT`;
                 const description = `Your Fixed Deposit has reached its full term!\\nPrincipal to Claim: ₹${fd.principal.toLocaleString('en-IN')}\\nInterest Rate: ${fd.ratePercent}%\\nCheck your account to ensure the full maturity balance is credited or renewed.`;
                 
                 icsContent += createIcsEvent(summary, description, fd.finalMaturityDate);

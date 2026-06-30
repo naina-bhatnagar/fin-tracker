@@ -10,6 +10,23 @@
             filter: invert(0.8) sepia(1) saturate(5) hue-rotate(130deg);
             cursor: pointer;
         }
+        .tour-highlight {
+            position: relative;
+            z-index: 45;
+            box-shadow: 0 0 0 4px #f43f5e, 0 0 0 9999px rgba(0,0,0,0.7);
+            border-radius: 10px;
+            transition: box-shadow 0.2s ease;
+        }
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .animate-bounce-slow {
+            animation: bounce-slow 2.5s ease-in-out infinite;
+        }
+        .group:hover .animate-bounce-slow {
+            animation-play-state: paused;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen font-sans p-4 sm:p-8">
@@ -145,6 +162,30 @@
             </div>
 
         </main>
+    </div>
+
+    <!-- Floating Tour Trigger -->
+    <div id="tourFab" class="fixed bottom-6 right-6 z-30 flex flex-col items-center cursor-pointer group">
+        <div class="w-14 h-14 rounded-full bg-indigo-600 group-hover:bg-indigo-500 shadow-lg shadow-indigo-900/50 flex items-center justify-center text-2xl transition-all group-hover:scale-110 animate-bounce-slow">
+            🤖
+        </div>
+        <span class="mt-1 text-[10px] font-bold text-gray-300 bg-gray-800/90 px-2 py-0.5 rounded-full shadow group-hover:text-white transition-colors">
+            Guide
+        </span>
+    </div>
+
+    <!-- Tour Overlay -->
+    <div id="tourBackdrop" class="fixed inset-0 bg-black/70 z-40 hidden"></div>
+
+    <div id="tourTooltip" class="fixed z-50 hidden bg-white text-gray-900 rounded-xl shadow-2xl w-80 max-w-[90vw] p-5">
+        <button id="tourCloseBtn" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-xl leading-none">&times;</button>
+        <h3 id="tourStepTitle" class="text-lg font-bold mb-2 pr-6"></h3>
+        <p id="tourStepText" class="text-sm text-gray-600 leading-relaxed"></p>
+        <div class="flex items-center justify-between mt-5 pt-3 border-t border-gray-200">
+            <button id="tourRestartBtn" class="text-xs text-gray-500 hover:text-gray-800 font-medium">Restart</button>
+            <span id="tourStepCounter" class="text-xs text-gray-400 font-mono"></span>
+            <button id="tourNextBtn" class="bg-red-500 hover:bg-red-600 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">Next</button>
+        </div>
     </div>
 
     <script>
@@ -590,6 +631,100 @@
             }
             window.history.back();
         });
+
+        // --- Guided Tour ---
+        const tourSteps = [
+            { selector: '#fdForm', title: 'Add a Fixed Deposit', text: 'Fill in the label, principal, interest rate, start date, and tenure here. Payout frequency decides how often interest is credited.' },
+            { selector: '#frequency', title: 'Payout Frequency', text: 'Choose Quarterly or Monthly — this determines how your interest payout dates are calculated.' },
+            { selector: '#copyPrevBtn', title: 'Quick Re-entry', text: 'Made a typo on your last entry? Delete it, hit "Same as Prev" to refill the form, then just fix the one field.' },
+            { selector: '#dbTableBody', title: 'Payout Schedule', text: 'Every upcoming interest payout across all your FDs shows up here, sorted by date.' },
+            { selector: '#maturityTableBody', title: 'Maturity Tracking', text: 'See when each FD matures, its status, and delete any entry using the 🗑️ button.' },
+            { selector: '#customFileName', title: 'Name Your Calendar File', text: 'Optionally rename the exported file before downloading.' },
+            { selector: '#downloadIcsBtn', title: 'Export & Done', text: 'This downloads a .ics file with all your reminders. Import it into Google Calendar, Outlook, or Apple Calendar — then your session data is wiped for privacy.' }
+        ];
+
+        let currentTourStep = 0;
+        const tourBackdrop = document.getElementById('tourBackdrop');
+        const tourTooltip = document.getElementById('tourTooltip');
+        const tourStepTitle = document.getElementById('tourStepTitle');
+        const tourStepText = document.getElementById('tourStepText');
+        const tourStepCounter = document.getElementById('tourStepCounter');
+        const tourNextBtn = document.getElementById('tourNextBtn');
+        const tourRestartBtn = document.getElementById('tourRestartBtn');
+        const tourCloseBtn = document.getElementById('tourCloseBtn');
+        const tourFab = document.getElementById('tourFab');
+
+        function clearTourHighlight() {
+            document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
+        }
+
+        function showTourStep(index) {
+            clearTourHighlight();
+
+            if (index >= tourSteps.length) {
+                endTour();
+                return;
+            }
+
+            const step = tourSteps[index];
+            const target = document.querySelector(step.selector);
+            if (!target) {
+                currentTourStep++;
+                showTourStep(currentTourStep);
+                return;
+            }
+
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            target.classList.add('tour-highlight');
+
+            tourStepTitle.textContent = step.title;
+            tourStepText.textContent = step.text;
+            tourStepCounter.textContent = `${index + 1} of ${tourSteps.length}`;
+            tourNextBtn.textContent = (index === tourSteps.length - 1) ? 'Finish' : 'Next';
+
+            setTimeout(() => {
+                const rect = target.getBoundingClientRect();
+                const tooltipHeight = tourTooltip.offsetHeight;
+                let top = rect.bottom + 12;
+
+                if (top + tooltipHeight > window.innerHeight) {
+                    top = Math.max(20, rect.top - tooltipHeight - 12);
+                }
+
+                let left = rect.left;
+                const maxLeft = window.innerWidth - tourTooltip.offsetWidth - 20;
+                left = Math.min(Math.max(20, left), maxLeft);
+
+                tourTooltip.style.top = `${top}px`;
+                tourTooltip.style.left = `${left}px`;
+            }, 350);
+        }
+
+        function startTour() {
+            currentTourStep = 0;
+            tourBackdrop.classList.remove('hidden');
+            tourTooltip.classList.remove('hidden');
+            showTourStep(currentTourStep);
+        }
+
+        function endTour() {
+            clearTourHighlight();
+            tourBackdrop.classList.add('hidden');
+            tourTooltip.classList.add('hidden');
+        }
+
+        tourFab.addEventListener('click', startTour);
+        tourNextBtn.addEventListener('click', () => {
+            currentTourStep++;
+            showTourStep(currentTourStep);
+        });
+        tourRestartBtn.addEventListener('click', () => {
+            currentTourStep = 0;
+            showTourStep(currentTourStep);
+        });
+        tourCloseBtn.addEventListener('click', endTour);
+        tourBackdrop.addEventListener('click', endTour);
+    </script>
     </script>
 </body>
 </html>

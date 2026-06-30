@@ -8,6 +8,12 @@ A privacy-focused, client-side web application built to solve the real-world pro
 
 ---
 
+## **Project Walkthrough**
+
+https://github.com/user-attachments/assets/2df33640-f96b-4057-ac83-a744e6fde0e0
+
+---
+
 ##  Features & Architecture
 
 * **Privacy-First (Zero-Server Architecture):** No financial parameters, balances, or dates are ever sent to a server. The calculator runs entirely within your browser.

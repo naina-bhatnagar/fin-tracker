@@ -10,7 +10,7 @@ A privacy-focused, client-side web application built to solve the real-world pro
 
 ## **Project Walkthrough**
 
-https://github.com/user-attachments/assets/2df33640-f96b-4057-ac83-a744e6fde0e0
+https://github.com/user-attachments/assets/f85db8e6-3a55-421d-a5df-8ed007237de6
 
 ---
 

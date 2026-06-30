@@ -13,8 +13,8 @@
         .tour-highlight {
             position: relative;
             z-index: 45;
-            box-shadow: 0 0 0 4px #f43f5e, 0 0 0 9999px rgba(0,0,0,0.7);
-            border-radius: 10px;
+            box-shadow: 0 0 0 6px #1f2937, 0 0 0 8px #f43f5e, 0 0 0 9999px rgba(0,0,0,0.7) !important;
+            border-radius: 12px;
             transition: box-shadow 0.2s ease;
         }
         @keyframes bounce-slow {
@@ -44,7 +44,7 @@
         <main class="grid grid-cols-1 md:grid-cols-3 gap-6">
             
             <div class="md:col-span-2 space-y-6">
-                <section class="bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-700">
+                <section id="formSection" class="bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-700">
                     <h2 class="text-xl font-bold text-gray-200 mb-4 flex items-center gap-2">Add New Fixed Deposit</h2>
                     <form id="fdForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -94,7 +94,7 @@
                     </form>
                 </section>
 
-                <section class="bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-700">
+                <section id="dbSection" class="bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-700">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-bold text-gray-200"> Database Summary Matrix</h2>
                         <span id="fdCountBadge" class="bg-gray-700 text-gray-300 px-2 py-0.5 rounded text-xs font-mono">0 FDs Added</span>
@@ -121,7 +121,7 @@
             </div>
 
             <div class="md:col-span-1 space-y-4">
-                <section class="bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-700 text-center space-y-4">
+                <section id="maturitySection" class="bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-700 text-center space-y-4">
                     <h3 class="text-md font-bold text-gray-300 uppercase tracking-widest text-xs">Global Execution Actions</h3>
                     
                     <div class="text-left">
@@ -634,11 +634,11 @@
 
         // --- Guided Tour ---
         const tourSteps = [
-            { selector: '#fdForm', title: 'Add a Fixed Deposit', text: 'Fill in the label, principal, interest rate, start date, and tenure here. Payout frequency decides how often interest is credited.' },
+            { selector: '#formSection', title: 'Add a Fixed Deposit', text: 'Fill in the label, principal, interest rate, start date, and tenure here. Payout frequency decides how often interest is credited.' },
             { selector: '#frequency', title: 'Payout Frequency', text: 'Choose Quarterly or Monthly — this determines how your interest payout dates are calculated.' },
             { selector: '#copyPrevBtn', title: 'Quick Re-entry', text: 'Made a typo on your last entry? Delete it, hit "Same as Prev" to refill the form, then just fix the one field.' },
-            { selector: '#dbTableBody', title: 'Payout Schedule', text: 'Every upcoming interest payout across all your FDs shows up here, sorted by date.' },
-            { selector: '#maturityTableBody', title: 'Maturity Tracking', text: 'See when each FD matures, its status, and delete any entry using the 🗑️ button.' },
+            { selector: '#dbSection', title: 'Payout Schedule', text: 'Every upcoming interest payout across all your FDs shows up here, sorted by date.' },
+            { selector: '#maturitySection', title: 'Maturity Tracking', text: 'See when each FD matures, its status, and delete any entry using the 🗑️ button.' },
             { selector: '#customFileName', title: 'Name Your Calendar File', text: 'Optionally rename the exported file before downloading.' },
             { selector: '#downloadIcsBtn', title: 'Export & Done', text: 'This downloads a .ics file with all your reminders. Import it into Google Calendar, Outlook, or Apple Calendar — then your session data is wiped for privacy.' }
         ];

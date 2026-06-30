@@ -131,11 +131,12 @@
                                     <th class="p-3">Maturity Date</th>
                                     <th class="p-3">Status</th>
                                     <th class="p-3 text-right">Principal</th>
+                                    <th class="p-3 text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="maturityTableBody" class="divide-y divide-gray-700 text-gray-300">
                                 <tr>
-                                    <td colspan="4" class="p-4 text-center text-gray-500 italic">No mature terms tracked yet.</td>
+                                    <td colspan="5" class="p-4 text-center text-gray-500 italic">No mature terms tracked yet.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -382,7 +383,7 @@
             if (fixed_deposits.length === 0 && closed_fixed_deposits.length === 0) {
                 maturityTableBody.innerHTML = `
                     <tr>
-                        <td colspan="4" class="p-4 text-center text-gray-500 italic">No mature terms tracked yet.</td>
+                        <td colspan="5" class="p-4 text-center text-gray-500 italic">No mature terms tracked yet.</td>
                     </tr>`;
                 return;
             }
@@ -413,8 +414,21 @@
                 <td class="p-3 font-mono text-gray-300">${dateStr}</td>
                 <td class="p-3 font-mono text-xs ${statusColorClass}">${statusText}</td>
                 <td class="p-3 text-right text-gray-100 font-mono">₹${fd.principal.toLocaleString('en-IN')}</td>
+                <td class="p-3 text-center">
+                <button class="delete-fd-btn text-red-400 hover:text-red-300 hover:bg-red-950/50 rounded px-2 py-1 transition-colors" data-fd-id="${fd.id}" title="Delete this FD">
+                    🗑️
+                </button>
+            </td>
             `;
             maturityTableBody.appendChild(row);
+        }
+
+        function deleteFd(fdId) {
+            fixed_deposits = fixed_deposits.filter(fd => fd.id !== fdId);
+            closed_fixed_deposits = closed_fixed_deposits.filter(fd => fd.id !== fdId);
+            calculated_payouts = calculated_payouts.filter(p => p.fdId !== fdId);
+
+            updateDatabaseUI();
         }
 
         // --- 4. Stream Conversion Pipeline (.ics Generation) ---
@@ -423,16 +437,27 @@
 
             let icsContent = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//FDBhatnagarTrack//NONSGML Framework//EN\n";
 
+            function escapeIcsText(text) {
+                return String(text)
+                    .replace(/\\/g, '\\\\')
+                    .replace(/;/g, '\\;')
+                    .replace(/,/g, '\\,');
+            }
+
             function createIcsEvent(summary, description, targetDate) {
                 const year = targetDate.getFullYear();
                 const month = String(targetDate.getMonth() + 1).padStart(2, '0');
                 const day = String(targetDate.getDate()).padStart(2, '0');
                 const dateString = `${year}${month}${day}`;
+
+                const now = new Date();
+                const stamp = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
                 
                 let eventStr = "BEGIN:VEVENT\n";
                 eventStr += `UID:${targetDate.getTime()}-${Math.random().toString(36).substring(2,8)}@fdtracker\n`;
-                eventStr += `SUMMARY:${summary}\n`;
-                eventStr += `DESCRIPTION:${description}\n`;
+                eventStr += `DTSTAMP:${stamp}\n`;
+                eventStr += `SUMMARY:${escapeIcsText(summary)}\n`;
+                eventStr += `DESCRIPTION:${escapeIcsText(description)}\n`;
                 eventStr += `DTSTART:${dateString}T090000\n`; 
                 eventStr += `DTEND:${dateString}T090100\n`;   
                 
@@ -511,6 +536,21 @@
             document.getElementById('frequency').value = lastSubmittedInputs.frequency;
 
             principalInput.dispatchEvent(new Event('input'));
+        });
+
+        // delete button logic
+        maturityTableBody.addEventListener('click', function(e) {
+            const btn = e.target.closest('.delete-fd-btn');
+            if (!btn) return;
+
+            const fdId = Number(btn.dataset.fdId);
+            const row = btn.closest('tr');
+            const labelCell = row.querySelector('td');
+            const label = labelCell ? labelCell.textContent : 'this FD';
+
+            if (confirm(`⚠️ Delete "${label}"? This will also remove its scheduled payout reminders.`)) {
+                deleteFd(fdId);
+            }
         });
 
         // Live Comma Formatter Input Event for Amount Field

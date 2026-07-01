@@ -526,9 +526,10 @@
 
             fixed_deposits.forEach(fd => {
                 if (fd.finalMaturityDate < new Date()) return;
-                const summary = `🎉 ${fd.label} : MATURITY ALERT`;
+                const summary = `🎉 ${fd.principal.toLocaleString('en-IN')} : MATURITY ALERT`;
                 const description = [
                     `Your Fixed Deposit has reached its full term!`,
+                    `FD Source Account: ${record.label}`,
                     `Principal to Claim: ₹${fd.principal.toLocaleString('en-IN')}`,
                     `Interest Rate: ${fd.ratePercent}%`,
                     `Check your account to ensure the full maturity balance is credited or renewed.`,

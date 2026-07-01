@@ -482,7 +482,8 @@
                 return String(text)
                     .replace(/\\/g, '\\\\')
                     .replace(/;/g, '\\;')
-                    .replace(/,/g, '\\,');
+                    .replace(/,/g, '\\,')
+                    .replace(/\r\n|\n|\r/g, '\\n');
             }
 
             function createIcsEvent(summary, description, targetDate) {
@@ -513,7 +514,12 @@
 
             calculated_payouts.forEach(record => {
                 const summary = `🚨 ₹${record.interestAmount.toFixed(2)} : Check FD Interest Credit`;
-                const description = `FD Source Account: ${record.label}\\nPrincipal: ₹${record.principalRef.toLocaleString('en-IN')}\\nCalculation Window Block: ${record.daysInInterval} Days\\nExpected Rupee Return: ₹${record.interestAmount.toFixed(2)}`;
+                const description = [
+                    `FD Source Account: ${record.label}`,
+                    `Principal: ₹${record.principalRef.toLocaleString('en-IN')}`,
+                    `Calculation Window Block: ${record.daysInInterval} Days`,
+                    `Expected Rupee Return: ₹${record.interestAmount.toFixed(2)}`
+                ].join('\n');
                 
                 icsContent += createIcsEvent(summary, description, record.payoutDate);
             });

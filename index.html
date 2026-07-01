@@ -527,7 +527,12 @@
             fixed_deposits.forEach(fd => {
                 if (fd.finalMaturityDate < new Date()) return;
                 const summary = `🎉 ${fd.label} : MATURITY ALERT`;
-                const description = `Your Fixed Deposit has reached its full term!\\nPrincipal to Claim: ₹${fd.principal.toLocaleString('en-IN')}\\nInterest Rate: ${fd.ratePercent}%\\nCheck your account to ensure the full maturity balance is credited or renewed.`;
+                const description = [
+                    `Your Fixed Deposit has reached its full term!`,
+                    `Principal to Claim: ₹${fd.principal.toLocaleString('en-IN')}`,
+                    `Interest Rate: ${fd.ratePercent}%`,
+                    `Check your account to ensure the full maturity balance is credited or renewed.`,
+                ].join('\n');
                 
                 icsContent += createIcsEvent(summary, description, fd.finalMaturityDate);
             });
@@ -730,7 +735,6 @@
         });
         tourCloseBtn.addEventListener('click', endTour);
         tourBackdrop.addEventListener('click', endTour);
-    </script>
     </script>
 </body>
 </html>
